@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar and Spelling Checker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 700px; background: white; padding: 30px; border-radius: 10px; box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1); }
+        #result { font-size: 18px; line-height: 1.6; }
+        .highlight-correct { color: green; font-weight: bold; }
+        .highlight-error { color: red; font-weight: bold; text-decoration: underline; }
+        .loading { display: none; font-style: italic; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center text-primary">Grammar & Spelling Checker</h2>
+        <textarea id="userText" class="form-control mt-3" rows="5" placeholder="Type or paste your text here..."></textarea>
+        <button id="checkBtn" class="btn btn-primary mt-3 w-100">Check Errors</button>
+        <p id="loading" class="loading text-center mt-2">Checking... Please wait 🔄</p>
+        <h4 class="mt-4">Corrected Text:</h4>
+        <div id="result" class="p-3 border rounded bg-light"></div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#checkBtn").click(function () {
+                let text = $("#userText").val().trim();
+                if (text === "") {
+                    alert("Please enter some text!");
+                    return;
+                }
+
+                $("#loading").show();  // Show loading animation
+                $("#result").html(""); // Clear previous result
+
+                $.post("/check", { text: text }, function (response) {
+                    $("#loading").hide(); // Hide loading animation
+
+                    if (response.corrected_text) {
+                        let correctedText = response.corrected_text;
+
+                        // Highlight the corrected words
+                        let highlightedText = highlightDifferences(text, correctedText);
+                        $("#result").html(highlightedText);
+                    } else {
+                        $("#result").text("Error: " + response.error);
+                    }
+                });
+            });
+        });
+
+        // Function to highlight differences (Errors in Red, Corrections in Green)
+        function highlightDifferences(original, corrected) {
+            let originalWords = original.split(" ");
+            let correctedWords = corrected.split(" ");
+            let highlighted = [];
+
+            for (let i = 0; i < correctedWords.length; i++) {
+                if (originalWords[i] !== correctedWords[i]) {
+                    highlighted.push(`<span class="highlight-correct">${correctedWords[i]}</span>`);
+                } else {
+                    highlighted.push(correctedWords[i]);
+                }
+            }
+
+            return highlighted.join(" ");
+        }
+    </script>
+</body>
+</html>
